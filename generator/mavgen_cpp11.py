@@ -301,15 +301,17 @@ def enum_remove_prefix(prefix, s):
     '''remove prefix from enum entry'''
     pl = prefix.split('_')
     sl = s.split('_')
+    lastmatch = None
 
     for i in range(len(pl)):
-        if pl[i] == sl[0]:
+        if len(sl) > 1 and pl[i] == sl[0]:
             sl = sl[1:]
+            lastmatch = pl[i]
         else:
             break
 
-    if sl[0][0].isdigit():
-        sl.insert(0, pl[-1])
+    if (len(sl[0]) == 0 or sl[0][0].isdigit()) and lastmatch is not None:
+        sl.insert(0, lastmatch)
 
     ret = '_'.join(sl)
     return MACROS.get(ret, ret)
