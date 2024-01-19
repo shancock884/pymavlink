@@ -65,7 +65,7 @@ def generate_enums(directory, filelist, xml_list, enums):
     print("Generating Enumerations")
 
     for enum in enums:
-        if enum.is_a_bitmask:
+        if enum.bitmask:
             continue
         filename = "%s%sEnum.swift" % (enum.swift_name, enum.basename)
         filepath = os.path.join(directory, filename)
@@ -92,7 +92,7 @@ def generate_optionsets(directory, filelist, xml_list, enums):
     print("Generating Enumerations")
 
     for enum in enums:
-        if not enum.is_a_bitmask:
+        if not enum.bitmask:
             continue
         for entry in enum.entry:
             entry.parent_swift_name = enum.swift_name
@@ -243,19 +243,8 @@ def lower_camel_case_from_underscores(string):
 def contains_a_bitmask(enums, enumName):
     for enum in enums:
         if enum.name == enumName:
-            return enum.is_a_bitmask
+            return enum.bitmask
     return False
-
-def enum_is_a_bitmask(enum):
-    values = []
-    for entry in enum.entry:
-        values.append(entry.value)
-    values.sort()
-    for i, value in enumerate(values):
-        if 2 ** i != value:
-            return False
-    return True
-
 
 def generate_enums_type_info(enums, msgs):
     """Add camel case swift names for enums an entries, descriptions and sort enums alphabetically"""
@@ -299,7 +288,6 @@ def generate_enums_type_info(enums, msgs):
         enum.all_entities = ", ".join(all_entities)
         enum.entities_info = ", ".join(entities_info)
         enum.entity_description = enum.description.replace('"','\\"')
-        enum.is_a_bitmask = enum_is_a_bitmask(enum)
 
     enums.sort(key = lambda enum : enum.swift_name)
 
