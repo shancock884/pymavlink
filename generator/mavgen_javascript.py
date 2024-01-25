@@ -49,7 +49,7 @@ Buffer.prototype.toByteArray = function () {
 
 ${MAVHEAD} = function(){};
 
-// Implement the CRC-16/MCRF4XX function (present in the Python version through the mavutil.py package)
+/** Implement the CRC-16/MCRF4XX function (present in the Python version through the mavutil.py package) */
 ${MAVHEAD}.x25Crc = function(buffer, crcIN) {
 
     var bytes = buffer;
@@ -86,7 +86,7 @@ ${MAVHEAD}.MAVLINK_TYPE_DOUBLE   = 10
 ${MAVHEAD}.MAVLINK_IFLAG_SIGNED = 0x01
 ${MAVHEAD}.MAVLINK_SIGNATURE_BLOCK_LEN = 13
 
-// Mavlink headers incorporate sequence, source system (platform) and source component. 
+/** Mavlink headers incorporate sequence, source system (platform) and source component. */
 ${MAVHEAD}.header = function(msgId, mlen, seq, srcSystem, srcComponent, incompat_flags=0, compat_flags=0,) {
 
     this.mlen = ( typeof mlen === 'undefined' ) ? 0 : mlen;
@@ -125,8 +125,8 @@ ${MAVHEAD}.header.prototype.pack = function() {
 
     t.write(outf, """
 
-// Base class declaration: mavlink.message will be the parent class for each
-// concrete implementation in mavlink.messages.
+/** Base class declaration: mavlink.message will be the parent class for each
+  * concrete implementation in mavlink.messages. */
 ${MAVHEAD}.message = function() {};
 
 // Convenience setter to facilitate turning the unpacked array of data into member properties
@@ -228,11 +228,11 @@ ${MAVHEAD}.message.prototype.pack = function(mav, crc_extra, payload) {
 def generate_enums(outf, enums, xml):
     print("Generating enums")
     outf.write("\n// enums\n")
-    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent="                        // ")
+    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=" *  ")
     for e in enums:
         outf.write("\n// %s\n" % e.name)
         for entry in e.entry:
-            t.write(outf, "${MAVHEAD}.${ENUMNAME} = ${ENUMVAL} // ${ENUMDESC}\n", {'ENUMNAME': entry.name,
+            t.write(outf, "/** ${ENUMVAL}: ${ENUMDESC} */\n${MAVHEAD}.${ENUMNAME} = ${ENUMVAL}\n", {'ENUMNAME': entry.name,
                                                                                 'ENUMVAL': entry.value,
                                                                                 'ENUMDESC': wrapper.fill(entry.description),
                                                                                 'MAVHEAD': get_mavhead(xml)})
@@ -252,21 +252,25 @@ def generate_classes(outf, msgs, xml):
 
     """
     print("Generating class definitions")
-    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent="")
+    wrapper = textwrap.TextWrapper(initial_indent=" * ", subsequent_indent=" * ")
     t.write(outf, "\n${MAVHEAD}.messages = {};\n\n", {'MAVHEAD': get_mavhead(xml)})
 
     def field_descriptions(fields):
         ret = ""
         for f in fields:
+            if f.array_length:
+                arraystr = "[%d]" % f.array_length
+            else:
+                arraystr = ""
             if not f.omit_arg:
-                ret += "                %-18s        : %s (%s)\n" % (f.name, f.description.strip(), f.type)
+                ret += " * @param %s %s (%s%s)\n" % (f.name, f.description.strip(), f.type, arraystr)
         return ret
 
     # now do all the messages
     for m in msgs:
 
         # assemble some strings we'll use later in outputting ..
-        comment = "%s\n\n%s" % (wrapper.fill(m.description.strip()), field_descriptions(m.fields))
+        comment = " * %s (%d)\n * \n%s\n * \n%s" % (m.name, m.id, wrapper.fill(m.description.strip()), field_descriptions(m.fields))
         argfieldnames = []
         conststr = ""
         for f in m.fields:
@@ -284,14 +288,10 @@ def generate_classes(outf, msgs, xml):
             instance_offset = -1
 
         # start with the comment block
-        outf.write("""
-/* 
-%s
-*/
-""" % (comment))
+        outf.write("/**\n%s*/\n" % (comment))
 
         # function signature + declaration
-        outf.write("    %s.messages.%s = function(" % ( get_mavhead(xml), m.name.lower() ) )
+        outf.write("%s.messages.%s = function(" % ( get_mavhead(xml), m.name.lower() ) )
         outf.write(" ...moreargs ) {\n")
         # passing the dynamic args into the correct attributes, we can call the constructor with or without the 'moreargs'
         outf.write("    [ this.%s ] = moreargs;\n" % " , this.".join(argfieldnames))
@@ -330,12 +330,13 @@ def generate_classes(outf, msgs, xml):
         outf.write("\n}\n")
 
         # inherit methods from the base message class
-        outf.write("\n%s.messages.%s.prototype = new %s.message;\n" % ( get_mavhead(xml), m.name.lower() ,get_mavhead(xml) ) )
+        outf.write("%s.messages.%s.prototype = new %s.message;\n\n" % ( get_mavhead(xml), m.name.lower() ,get_mavhead(xml) ) )
 
         orderedfields =    "var orderedfields = [ this." + ", this.".join(m.ordered_fieldnames) + "];";
 
 
         # Implement the pack() function for this message
+        t.write(outf,"/** Pack the %s message */\n" % m.name);
         t.write(outf, """
 ${MAVHEAD}.messages.${MNAME}.prototype.pack = function(mav) {
     ${MORDERED}
@@ -380,7 +381,7 @@ def generate_mavlink_class(outf, msgs, xml):
     
     t.write(outf, """
 
-// Special mavlink message to capture malformed data packets for debugging
+/** Special mavlink message to capture malformed data packets for debugging */
 ${MAVHEAD}.messages.bad_data = function(data, reason) {
     this._id = ${MAVHEAD}.MAVLINK_MSG_ID_BAD_DATA;
     this._data = data;
