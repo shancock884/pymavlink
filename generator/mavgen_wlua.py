@@ -206,11 +206,16 @@ f.${fname} = ProtoField.new("${flabel} (${ftypename})${unitname}", "mavlink_prot
             if not is_power_of_2(entry.value) or entry.name.endswith("_ENUM_END"):
                 # omit flag enums have values like "0: None"
                 continue
+            # For values above 32-bits, this needs to be specified via UInt64 object
+            if entry.value < 4294967296:
+                entry_value = entry.value
+            else:
+                entry_value = "UInt64(%u,%u)" % (entry.value & 0xFFFFFFFF, entry.value >> 32)
 
             t.write(outf,
 """
 f.${fname}_flag${ename} = ProtoField.bool("mavlink_proto.${fname}.${ename}", "${ename}", ${fbits}, nil, ${evalue})
-""", {'fname': name, 'ename': entry.name, 'fbits': physical_bits, 'evalue': entry.value})
+""", {'fname': name, 'ename': entry.name, 'fbits': physical_bits, 'evalue': entry_value})
 
 
 def generate_msg_fields(outf, msg, enums):
@@ -264,14 +269,14 @@ def generate_flag_enum_dissector(outf, enum):
     t.write(outf,
 """
 -- dissect flag field
-function dissect_flags_${enumname}(tree, name, tvbrange, value)
+function dissect_flags_${enumname}(tree, name, ...)
 """, {'enumname': enum.name})
 
     for entry in enum.entry:
         if is_power_of_2(entry.value) and not entry.name.endswith("_ENUM_END"):
             t.write(outf,
 """
-    tree:add_le(f[name .. "_flag${entryname}"], tvbrange, value)
+    tree:add_le(f[name .. "_flag${entryname}"], ...)
 """, {'entryname': entry.name})
 
     t.write(outf,
@@ -350,14 +355,17 @@ def generate_field_dissector(outf, msg, field, offset, enums, cmd=None, param=No
             t.write(outf,"    subtree:append_text(" + unit_decoder_mapping[unit] + ")\n")
 
         if enum_obj and enum_obj.bitmask:
-            if not value_extracted:
-                t.write(outf,"    value = tvbrange:${ftvbfunc}()\n", {'ftvbfunc': tvb_func})
-                value_extracted = True
-            valuemethod = ":tonumber()" if tvb_func == "le_uint64" else ""
+            if tvb_func == "le_uint" or tvb_func == "le_uint64":
+                value_arg = ""
+            else:
+                if not value_extracted:
+                    t.write(outf,"    value = tvbrange:${ftvbfunc}()\n", {'ftvbfunc': tvb_func})
+                    value_extracted = True
+                value_arg = ", value"
             t.write(outf,
 """
-    dissect_flags_${enumname}(subtree, "${fvar}", tvbrange, value${vmeth})
-""", {'enumname': enum_name, 'fvar': field_var, 'vmeth': valuemethod})
+    dissect_flags_${enumname}(subtree, "${fvar}", tvbrange${varg})
+""", {'enumname': enum_name, 'fvar': field_var, 'varg': value_arg})
 
 
 def generate_payload_dissector(outf, msg, cmds, enums, cmd=None):
