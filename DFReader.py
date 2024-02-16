@@ -555,6 +555,103 @@ class DFReaderClock_gps_interpolated(DFReaderClock):
         m._timestamp = self.timebase + count/rate
 
 
+class DFMetaData(object):
+    '''handle dataflash messages metadata'''
+    def __init__(self,parent):
+        self.parent = parent
+        self.data = None
+        self.tried = False
+
+    def reset(self):
+        '''clear cached data'''
+        self.data = None
+        self.tried = False
+
+    # Copy of function in mp_util, to avoid dependency on MavProxy
+    def dot_mavproxy(self,name=None):
+        '''return a path to store mavproxy data'''
+        if 'HOME' not in os.environ:
+            dir = os.path.join(os.environ['LOCALAPPDATA'], '.mavproxy')
+        else:
+            dir = os.path.join(os.environ['HOME'], '.mavproxy')
+        if name is None:
+            return dir
+        return os.path.join(dir, name)
+
+    def metadata_tree(self,verbose=False):
+        '''return a map between a log message and its metadata. May return None if data is not available'''
+        # If we've already tried loading data, use it if we have it
+        # This avoid repeated attempts, when the file is not there
+        if self.tried:
+            return self.data
+        self.tried = True
+        # Get file name, based on vehicle type
+        mapping = { mavutil.mavlink.MAV_TYPE_GROUND_ROVER : "Rover",
+                    mavutil.mavlink.MAV_TYPE_FIXED_WING : "Plane",
+                    mavutil.mavlink.MAV_TYPE_QUADROTOR : "Copter",
+                    mavutil.mavlink.MAV_TYPE_HELICOPTER : "Copter",
+                    mavutil.mavlink.MAV_TYPE_ANTENNA_TRACKER : "Tracker",
+                    mavutil.mavlink.MAV_TYPE_SUBMARINE : "Sub",
+                    mavutil.mavlink.MAV_TYPE_AIRSHIP : "Blimp",
+                    }
+        if self.parent.mav_type in mapping:
+            path = self.dot_mavproxy("LogMessages_%s.xml" % mapping[self.parent.mav_type])
+        else:
+            return None
+        # Does the file exist?
+        if not os.path.exists(path):
+            if verbose:
+                print("Can't find '%s'\nPlease run 'logmessage download' first" % path)
+            return None
+        # Read in the XML
+        xml = open(path,'rb').read()
+        from lxml import objectify
+        objectify.enable_recursive_str()
+        tree = objectify.fromstring(xml)
+        data = {}
+        for p in tree.logformat:
+            n = p.get('name')
+            data[n] = p
+        # Cache and return data
+        self.data = data
+        return self.data
+
+    def print_help(self,msg):
+        '''print help for a log message'''
+        data = self.metadata_tree(True)
+        if data is None or not msg in data:
+            return
+        node = data[msg]
+        # Message name and description
+        print("Log Message: %s\n%s\n" % (msg,node.description.text))
+        # Protect against replay messages which dont list their fields
+        if hasattr(node.fields,'field'):
+            # Loop through fields
+            for f in node.fields.field:
+                units = f.get('units')
+                dtype = f.get('type')
+                addstr = ''
+                if units:
+                    addstr = "[%s] " % units
+                elif 'char' in dtype:
+                    addstr = "[%s] " % dtype
+                elif hasattr(f,'enum'):
+                    addstr = "[enum] "
+                elif hasattr(f,'bitmask'):
+                    addstr = "[bitmask] "
+                print("%s %s: %s" % (f.get('name'),addstr,f.description.text))
+
+    def get_description(self,msg):
+        '''get the description of a log message'''
+        data = self.metadata_tree()
+        if data is None:
+            return None
+        if msg in data:
+            return data[msg].description.text
+        else:
+            return ""
+
+
 class DFReader(object):
     '''parse a generic dataflash file'''
     def __init__(self):
@@ -572,6 +669,7 @@ class DFReader(object):
         self.percent = 0
         self.unit_lookup = {}  # lookup table of units defined by UNIT messages
         self.mult_lookup = {}  # lookup table of multipliers defined by MULT messages
+        self.metadata = DFMetaData(self)
 
     def _rewind(self):
         '''reset state on rewind'''
@@ -732,6 +830,8 @@ class DFReader(object):
                 self.mav_type = mavutil.mavlink.MAV_TYPE_SUBMARINE
             elif m.Message.find("Blimp") != -1:
                 self.mav_type = mavutil.mavlink.MAV_TYPE_AIRSHIP
+            # Reset the meta data, when mav type is updated
+            self.metadata.reset()
         if type == 'VER' and hasattr(m,'BU'):
             build_types = { 1: mavutil.mavlink.MAV_TYPE_GROUND_ROVER,
                             2: mavutil.mavlink.MAV_TYPE_QUADROTOR,
@@ -744,6 +844,9 @@ class DFReader(object):
             mavtype = build_types.get(m.BU,None)
             if mavtype is not None:
                 self.mav_type = mavtype
+                # Reset the meta data, when mav type is updated
+                self.metadata.reset()
+
         if type == 'MODE':
             if hasattr(m,'Mode') and isinstance(m.Mode, str):
                 self.flightmode = m.Mode.upper()
