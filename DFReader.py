@@ -314,8 +314,42 @@ class DFMessage(object):
             # Append the unit to the output
             unit = self.fmt.get_unit(c)
             if unit == "":
-                # No unit specified - just output the newline
-                f.write("\n")
+                # No unit specified - maybe there is more info in metadata
+                node = self._parent.metadata.get_field_node(self.fmt.name,c)
+                # If not, just print new line
+                if node is None:
+                    f.write("\n")
+                # If its an enum, look for matching element
+                elif hasattr(node,'enum'):
+                    for e in node.enum.element:
+                        if int(e.value.text) == val:
+                            f.write(" (%s)" % e.get('name'))
+                            break
+                    f.write("\n")
+                # If its a bitmask, show True/False for each bit
+                elif hasattr(node,'bitmask'):
+                    f.write(" (0x%X)\n" % (val))
+                    for e in node.bitmask.bit:
+                        f.write("        %s : %s\n" % (e.get('name'),(int(e.value.text) & val)>0))
+                # If its a boolean, use the description
+                elif node.description.text.startswith(("True if ","true if ")):
+                    if val:
+                        f.write(" (%s)\n" % (node.description.text[8:]))
+                    else:
+                        desc = node.description.text[8:].split(" ")
+                        notAdded = False
+                        # Try to find a verb (is, was, has) in the description
+                        # to add the NOT at the most readable place
+                        for v in range(1,4):
+                            if len(desc)>v and desc[v] in ["is","was","has"]:
+                                desc[v] = "%s NOT" % desc[v]
+                                notAdded = True
+                                break
+                        if not notAdded:
+                            desc[0] = "NOT %s" % desc[0]
+                        f.write(" (%s)\n" % (" ".join(desc)))
+                else:
+                    f.write("\n")
             elif unit.startswith("rad"):
                 # For rad or rad/s, add the degrees conversion too
                 f.write(" %s (%s %s)\n" % (unit, math.degrees(val), unit.replace("rad","deg")))
@@ -612,6 +646,9 @@ class DFMetaData(object):
         for p in tree.logformat:
             n = p.get('name')
             data[n] = p
+            if hasattr(p.fields,'field'):
+                for f in p.fields.field:
+                    data["%s.%s" % (n,f.get('name'))] = f
         # Cache and return data
         self.data = data
         return self.data
@@ -650,6 +687,15 @@ class DFMetaData(object):
             return data[msg].description.text
         else:
             return ""
+
+    def get_field_node(self,msg,field):
+        '''get the tree element for the specified log message'''
+        data = self.metadata_tree()
+        name = "%s.%s" % (msg,field)
+        if data is not None and name in data:
+            return data[name]
+        else:
+            return None
 
 
 class DFReader(object):
