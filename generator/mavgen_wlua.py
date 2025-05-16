@@ -322,6 +322,9 @@ custom_field_dissector = {
 
 unit_decoder_mapping = {
     'degE7': 'string.format(\" (%.7f deg)\",value/1E7)',
+    'degE5': 'string.format(\" (%.5f deg)\",value/1E5)',
+    'cdeg': 'string.format(\" (%.2f deg)\",value/100)',
+    'cdegC': 'string.format(\" (%.2f degC)\",value/100)',
     'us': 'time_usec_decode(value)',
     'rad': 'string.format(\" (%g deg)\",value*180/math.pi)',
     'rad/s': 'string.format(\" (%g deg/s)\",value*180/math.pi)'

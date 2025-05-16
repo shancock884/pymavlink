@@ -561,7 +561,7 @@
               eph (uint16_t*1E-2): 2.33
               epv (uint16_t*1E-2): 1.78
               vel (uint16_t) [cm/s]: 0
-              cog (uint16_t) [cdeg]: 0
+              cog (uint16_t) [cdeg]: 0 (0.00 deg)
               satellites_visible (uint8_t): 16
           Message CRC: 0x1911
       
