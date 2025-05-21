@@ -427,7 +427,7 @@
                   .... 1... .... .... .... = MAV_PROTOCOL_CAPABILITY_MISSION_RALLY: True
                   ...0 .... .... .... .... = MAV_PROTOCOL_CAPABILITY_RESERVED2: False
                   ..0. .... .... .... .... = MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_C_CAST: False
-              flight_sw_version (uint32_t): 67307007
+              flight_sw_version (uint32_t): 67307007 (4.3.5 OFFICIAL)
               middleware_sw_version (uint32_t): 0
               os_sw_version (uint32_t): 0
               board_version (uint32_t): 0

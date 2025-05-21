@@ -315,8 +315,43 @@ def generate_ftp_payload_dissector(outf, msg, field, offset):
 """, {'foffset': offset, 'fsize': field.array_length})
 
 
+def generate_flight_sw_version(outf, msg, field, offset):
+    t.write(outf,
+"""
+    tvbrange = padded(offset + ${foffset}, 4)
+    subtree = tree:add_le(f.AUTOPILOT_VERSION_flight_sw_version, tvbrange)
+    ver = tvbrange:le_int()
+    verstr = string.format("%d.%d.%d",bit.rshift(ver,24),bit.band(bit.rshift(ver,16),0xff),bit.band(bit.rshift(ver,8),0xff))
+    vertype = bit.band(ver,0xff)
+    local typestr,plus,plusstr
+    if (vertype == 255) then
+        typestr = "OFFICIAL"
+        plus = 0
+    elseif (vertype >= 192) then
+        typestr = "RC"
+        plus = vertype-192
+    elseif (vertype >= 128) then
+        typestr = "BETA"
+        plus = vertype-128
+    elseif (vertype >= 64) then
+        typestr = "ALPHA"
+        plus = vertype-64
+    else
+        typestr = "DEV"
+        plus = vertype-0
+    end
+    if plus > 0 then
+        plusstr = string.format("+%d",plus)
+    else
+        plusstr = ""
+    end
+    subtree:append_text(string.format(" (%s %s%s)",verstr,typestr,plusstr))
+""", {'foffset': offset})
+
+
 # Define custom field dissectors
 custom_field_dissector = {
+    'AUTOPILOT_VERSION.flight_sw_version': generate_flight_sw_version,
     'FILE_TRANSFER_PROTOCOL.payload': generate_ftp_payload_dissector
 }
 
