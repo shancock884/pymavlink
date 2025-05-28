@@ -52,6 +52,8 @@ except ImportError:
         ("common.xml", "gps_raw_int.pcapng"),
         # test custom dissector for FILE_TRANSFER_PROTOCOL
         ("common.xml", "file_transfer_protocol.pcapng"),
+        # test bitmasks with 64-bits
+        ("bitmask_64bit.xml", "autopilot_version.pcapng"),
     ],
 )
 def test_wlua(request, tmp_path, snapshot, mdef, pcap):
