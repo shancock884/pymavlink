@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<mavlink>
+  <version>3</version>
+  <dialect>0</dialect>
+  <enums>
+    <enum name="MAV_BITMASK_64BIT" bitmask="true">
+      <!-- while we are here, lets test that Mavgen can handle all of the allowed 
+           ways in which values can be specified: decimal, hex, binary, power of 2 -->
+      <entry value="1" name="BIT0" />
+      <entry value="2" name="BIT1" />
+      <entry value="4" name="BIT2" />
+      <entry value="8" name="BIT3" />
+      <entry value="2**4" name="BIT4" />
+      <entry value="2**5" name="BIT5" />
+      <entry value="2**6" name="BIT6" />
+      <entry value="2**7" name="BIT7" />
+      <entry value="0b000100000000" name="BIT8" />
+      <entry value="0b001000000000" name="BIT9" />
+      <entry value="0b010000000000" name="BIT10" />
+      <entry value="0b100000000000" name="BIT11" />
+      <entry value="0b0001000000000000" name="BIT12" />
+      <entry value="0b0010000000000000" name="BIT13" />
+      <entry value="0b0100000000000000" name="BIT14" />
+      <entry value="0b1000000000000000" name="BIT15" />
+      <entry value="0x10000" name="BIT16" />
+      <entry value="0x20000" name="BIT17" />
+      <entry value="0x40000" name="BIT18" />
+      <entry value="0x80000" name="BIT19" />
+      <entry value="0x100000" name="BIT20" />
+      <entry value="0x200000" name="BIT21" />
+      <entry value="0x400000" name="BIT22" />
+      <entry value="0x800000" name="BIT23" />
+      <entry value="0x1000000" name="BIT24" />
+      <entry value="0x2000000" name="BIT25" />
+      <entry value="0x4000000" name="BIT26" />
+      <entry value="0x8000000" name="BIT27" />
+      <entry value="0x10000000" name="BIT28" />
+      <entry value="0x20000000" name="BIT29" />
+      <entry value="0x40000000" name="BIT30" />
+      <entry value="0x80000000" name="BIT31" />
+      <entry value="0x100000000" name="BIT32" />
+      <entry value="0x200000000" name="BIT33" />
+      <entry value="0x400000000" name="BIT34" />
+      <entry value="0x800000000" name="BIT35" />
+      <entry value="0x1000000000" name="BIT36" />
+      <entry value="0x2000000000" name="BIT37" />
+      <entry value="0x4000000000" name="BIT38" />
+      <entry value="0x8000000000" name="BIT39" />
+      <entry value="0x10000000000" name="BIT40" />
+      <entry value="0x20000000000" name="BIT41" />
+      <entry value="0x40000000000" name="BIT42" />
+      <entry value="0x80000000000" name="BIT43" />
+      <entry value="0x100000000000" name="BIT44" />
+      <entry value="0x200000000000" name="BIT45" />
+      <entry value="0x400000000000" name="BIT46" />
+      <entry value="0x800000000000" name="BIT47" />
+      <entry value="0x1000000000000" name="BIT48" />
+      <entry value="0x2000000000000" name="BIT49" />
+      <entry value="0x4000000000000" name="BIT50" />
+      <entry value="0x8000000000000" name="BIT51" />
+      <entry value="0x10000000000000" name="BIT52" />
+      <entry value="0x20000000000000" name="BIT53" />
+      <entry value="0x40000000000000" name="BIT54" />
+      <entry value="0x80000000000000" name="BIT55" />
+      <entry value="0x100000000000000" name="BIT56" />
+      <entry value="0x200000000000000" name="BIT57" />
+      <entry value="0x400000000000000" name="BIT58" />
+      <entry value="0x800000000000000" name="BIT59" />
+      <entry value="0b1000000000000000000000000000000000000000000000000000000000000" name="BIT60" />
+      <entry value="2305843009213693952" name="BIT61" />
+      <entry value="2**62" name="BIT62" />
+      <entry value="0x8000000000000000" name="BIT63" />
+    </enum>
+  </enums>
+  <messages>
+    <message id="148" name="AUTOPILOT_VERSION">
+      <description>Version and capability of autopilot software. This should be emitted in response to a request with MAV_CMD_REQUEST_MESSAGE.</description>
+      <field type="uint64_t" name="field1">field 1</field>
+      <field type="uint64_t" name="field2">field 2</field>
+      <field type="uint64_t" name="field3">field 3</field>
+      <field type="uint64_t" name="field4">field 4</field>
+      <field type="uint64_t" name="field5">field 5</field>
+      <field type="uint64_t" name="field6">field 6</field>
+      <field type="uint64_t" name="field7">field 7</field>
+      <field type="uint64_t" name="field8">field 8</field>
+      <field type="uint64_t" name="bitfield_64bit" enum="MAV_BITMASK_64BIT" display="bitmask">field 9 - bitmask 64bits</field>
+      <field type="uint32_t" name="field10">field 10</field>
+      <field type="uint8_t[2]" name="field11">field 10</field>
+    </message>
+  </messages>
+</mavlink>
