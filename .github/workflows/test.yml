@@ -30,6 +30,7 @@ jobs:
             pip install mypy
           fi
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          sudo add-apt-repository ppa:wireshark-dev/stable
           sudo apt update
           sudo apt install -y libgtest-dev g++ tshark
 
